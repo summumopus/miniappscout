@@ -5,6 +5,7 @@ import { getSupabaseClient } from '@/lib/supabaseClient';
 import AppCard from '@/components/AppCard';
 import CategoryFilter from '@/components/CategoryFilter';
 import SearchBar from '@/components/SearchBar';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   const supabase = getSupabaseClient();
@@ -12,6 +13,7 @@ export default function Home() {
   const [filteredApps, setFilteredApps] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Fetch apps on mount
   useEffect(() => {
@@ -36,12 +38,10 @@ export default function Home() {
   useEffect(() => {
     let result = apps;
 
-    // Category filter
     if (selectedCategory) {
       result = result.filter((app) => app.categories?.includes(selectedCategory));
     }
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -54,26 +54,42 @@ export default function Home() {
     setFilteredApps(result);
   }, [apps, selectedCategory, searchQuery]);
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  const handleSelectCategory = (category: string | null) => {
-    setSelectedCategory(category);
-  };
+  // Separate featured apps (verified)
+  const featuredApps = filteredApps.filter((app) => app.verified);
+  const otherApps = filteredApps.filter((app) => !app.verified);
 
   return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">MiniAppScout — Telegram Mini Apps Directory</h1>
+    <>
+      <main className="container mx-auto p-4">
+        <h1 className="text-3xl font-bold mb-4">
+          MiniAppScout — Telegram Mini Apps Directory
+        </h1>
 
-      <SearchBar onSearch={setSearchQuery} />
-      <CategoryFilter categories={categories} onSelect={handleSelectCategory} />
+        <SearchBar onSearch={setSearchQuery} />
+        <CategoryFilter categories={categories} onSelect={setSelectedCategory} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {filteredApps.length > 0 ? (
-          filteredApps.map((app) => <AppCard key={app.id} app={app} />)
-        ) : (
-          <p>No mini apps found.</p>
+        {featuredApps.length > 0 && (
+          <>
+            <h2 className="text-2xl font-semibold mb-2 mt-6">Featured Apps</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {featuredApps.map((app) => (
+                <AppCard key={app.id} app={app} />
+              ))}
+            </div>
+          </>
         )}
-      </div>
-    </main>
+
+        <h2 className="text-2xl font-semibold mb-2 mt-6">All Apps</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {otherApps.length > 0 ? (
+            otherApps.map((app) => <AppCard key={app.id} app={app} />)
+          ) : (
+            <p>No mini apps found.</p>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </>
   );
 }
