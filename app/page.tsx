@@ -7,6 +7,17 @@ import CategoryFilter from '@/components/CategoryFilter';
 import SearchBar from '@/components/SearchBar';
 import Footer from '@/components/Footer';
 
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initDataUnsafe?: { user?: any };
+        ready: () => void;
+      };
+    };
+  }
+}
+
 export default function Home() {
   const supabase = getSupabaseClient();
   const [apps, setApps] = useState<any[]>([]);
@@ -14,6 +25,22 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [tgUser, setTgUser] = useState<any | null>(null);
+
+  // Initialize Telegram Web App
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const webApp = window.Telegram?.WebApp;
+    if (!webApp) {
+      return;
+    }
+    webApp.ready();
+    const user = webApp.initDataUnsafe?.user || null;
+    setTgUser(user);
+    console.log('Telegram user:', user);
+  }, []);
 
   // Fetch apps on mount
   useEffect(() => {
@@ -61,6 +88,12 @@ export default function Home() {
   return (
     <>
       <main className="container mx-auto p-4">
+        {tgUser && (
+          <p className="mb-4 text-sm text-gray-600">
+            Welcome, {tgUser.first_name} {tgUser.last_name || ''}!
+          </p>
+        )}
+
         <h1 className="text-3xl font-bold mb-4">
           MiniAppScout — Telegram Mini Apps Directory
         </h1>
